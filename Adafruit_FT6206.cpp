@@ -33,7 +33,7 @@
 #define Wire Wire1
 #endif
 
-//#define FT6206_DEBUG
+#define FT6206_DEBUG
 //#define I2C_DEBUG
 
 /**************************************************************************/
@@ -46,15 +46,22 @@ Adafruit_FT6206::Adafruit_FT6206() { touches = 0; }
 
 /**************************************************************************/
 /*!
-    @brief  Setups the I2C interface and hardware, identifies if chip is found
+    @brief  Sets up the I2C interface and hardware, identifies if chip is found
     @param  thresh Optional threshhold-for-touch value, default is
    FT6206_DEFAULT_THRESSHOLD but you can try changing it if your screen is
    too/not sensitive.
     @returns True if an FT6206 is found, false on any failure
 */
 /**************************************************************************/
-boolean Adafruit_FT6206::begin(uint8_t thresh) {
-  Wire.begin();
+boolean Adafruit_FT6206::begin(uint8_t sda, uint8_t scl, uint8_t thresh) {
+  if (sda == 0 && scl == 0) {
+    Wire.begin();
+  } else {
+    Wire.begin(18, 19);
+      
+      // not working with sda and scl, but if change with hardcoded
+      // pins works -> Wire.begin(18, 19);
+  }
 
 #ifdef FT6206_DEBUG
   Serial.print("Vend ID: 0x");
@@ -67,7 +74,10 @@ boolean Adafruit_FT6206::begin(uint8_t thresh) {
   Serial.println(readRegister8(FT62XX_REG_POINTRATE));
   Serial.print("Thresh: ");
   Serial.println(readRegister8(FT62XX_REG_THRESHHOLD));
-
+    
+#endif
+    
+#ifdef I2C_DEBUG   
   // dump all registers
   for (int16_t i = 0; i < 0x10; i++) {
     Serial.print("I2C $");
@@ -84,12 +94,17 @@ boolean Adafruit_FT6206::begin(uint8_t thresh) {
     return false;
   }
   uint8_t id = readRegister8(FT62XX_REG_CHIPID);
+    
   if ((id != FT6206_CHIPID) && (id != FT6236_CHIPID) &&
       (id != FT6236U_CHIPID)) {
     return false;
   }
 
   return true;
+}
+
+boolean Adafruit_FT6206::begin(uint8_t thresh) {
+  begin(18, 19, thresh);
 }
 
 /**************************************************************************/
